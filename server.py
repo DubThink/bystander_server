@@ -41,6 +41,7 @@ class Server(BaseHTTPRequestHandler):
     def do_POST(self):
         # Doesn't do anything with posted data
         self._set_headers()
+        print self.posted
 #        print self.data
         self.wfile.write('{"name":"bob"}')
 
