@@ -33,6 +33,7 @@ class Room:
         self.players = {}
         self.secret = secret
         self.is_live=False
+        self.is_open=True
 
     def addPlayer(self, name):
         self.players[name]=Player(self._uid,name)
@@ -127,8 +128,13 @@ class Server(BaseHTTPRequestHandler):
                 output_json=self.req_supdate(data)
             elif type=="saction":
                 atype=data["action"][0]
-                if atype=="makelive":
-                    output_json=self.saction_setlive(True)
+                if atype=="make_live":
+                    output_json=self.saction_setlive(data,True)
+                elif atype=="make_unlive":
+                    output_json=self.saction_setlive(data,False)
+                elif atype=="reset":
+                    output_json=self.saction_reset(data)
+
         except KeyError as e:
             print "===ERROR===",e
             self.do_Error(400,str(e))
@@ -180,6 +186,8 @@ class Server(BaseHTTPRequestHandler):
         room_id=data["room_id"][0]
         if room_id not in self.rooms:
             return {"success":"false","message":"Room does not exist."}
+        if not self.rooms[room_id].is_open:
+            return {"success":"false","message":"Room closed."}
         if name not in self.rooms[room_id].players:
             return {"success":"false","message":"Name '%s' does not exist in room."%name}
         ret=self.rooms[room_id].players[name].get_json()
@@ -209,6 +217,29 @@ class Server(BaseHTTPRequestHandler):
             return {"success":"false","message":"Name '%s' does not exist in room."%name}
         self.rooms[room_id].players[name].has_called = True
     
+    def saction_setlive(self, data, newLive):
+        room_id=data["room_id"][0]
+        if room_id not in self.rooms:
+            return {"success":False,"message":"Room does not exist."}
+        self.rooms[room_id].is_live=newLive
+        return {"success":True,"message":"Set live state"}
+
+    def saction_reset(self, data):
+        room_id=data["room_id"][0]
+        if room_id not in self.rooms:
+            return {"success":False,"message":"Room does not exist."}
+        for p in self.rooms[room_id].players:
+            p.shade_up=False
+            p.has_called=False
+        return {"success":True,"message":"Reset players"}
+
+    def saction_closeroom(self, data):
+        room_id=data["room_id"][0]
+        if room_id not in self.rooms:
+            return {"success":False,"message":"Room does not exist."}
+        self.rooms[room_id].is_open=false
+        return {"success":True,"message":"Reset players"}
+
 def dump(self):
     print "\n\n", "-"*80
     for rid in self.rooms.keys():
