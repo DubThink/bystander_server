@@ -8,7 +8,13 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import SocketServer
 import os.path
 
-PORT=33002
+PORT=30002
+class Player:
+    def __init__(self,uid,name):
+        self.uid=uid
+        self.shade_up=False
+        self.has_called=False
+        self.name=name
 
 class Server(BaseHTTPRequestHandler):
     def _set_headers(self):
