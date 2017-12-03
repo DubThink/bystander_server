@@ -89,6 +89,7 @@ class Server(BaseHTTPRequestHandler):
         data=parse_qs(post_data)
         print "Parsed:",data
         if "type" not in data:
+            print "===ERROR=== no type in data"
             self.do_Error(400)
             return
         type=data["type"][0]
@@ -100,7 +101,9 @@ class Server(BaseHTTPRequestHandler):
             elif type=="update_request":
                 output_json=self.req_update(data)
         except KeyError as e:
+            print "===ERROR===",e
             self.do_Error(400,str(e))
+            return
 #        print self.posted
 #        print self.data
         self._set_headers_json()
@@ -123,8 +126,8 @@ class Server(BaseHTTPRequestHandler):
         room_id=data["room_id"][0]
         if room_id not in self.games:
             return {"success":"false","message":"Room does not exist."}
-        if name in self.games[room_id].players:
-            return {"success":"false","message":"Name does not exist in room."}    
+        if name not in self.games[room_id].players:
+            return {"success":"false","message":"Name '%s' does not exist in room."%name}    
         return self.games[room_id].players[name].get_json()
 
 
