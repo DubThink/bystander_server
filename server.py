@@ -40,7 +40,7 @@ class Room:
 
     def get_json(self):
         return{
-            "players":[json.dumps(i) for i in self.players]
+            "players":[self.players[i].get_json() for i in self.players]
         }
     def __str__(self):
         d=self.get_json()
@@ -122,6 +122,8 @@ class Server(BaseHTTPRequestHandler):
                 output_json=self.req_update(data)
             elif type=="new_room":
                 output_json=self.req_newroom(data)
+            elif type=="supdate_request":
+                output_json=self.req_supdate(data)
         except KeyError as e:
             print "===ERROR===",e
             self.do_Error(400,str(e))
@@ -141,17 +143,18 @@ class Server(BaseHTTPRequestHandler):
         while room_id in self.rooms:
             room_id=self.random_code()
         self.rooms[room_id]=Room(secret)
-        return {"success":"true","room_id":room_id}
+        return {"room_id":room_id}
 
     def req_supdate(self, data):
         secret=data["secret"][0]
         room_id=data["room_id"][0]
         if room_id not in self.rooms:
-            return {"success":"false","message":"Room does not exist."}
+            return {"success":False,"players":[],"message":"Room does not exist."}
         # if name not in self.rooms[room_id].players:
         #     return {"success":"false","message":"Name '%s' does not exist in room."%name}
-        ret=self.rooms[room_id].players[name].get_json()
+        ret=self.rooms[room_id].get_json()
         ret["success"]=True
+        ret["message"]="hi"
         return ret
 
     def req_join(self, data):
@@ -193,7 +196,13 @@ class Server(BaseHTTPRequestHandler):
         if name not in self.rooms[room_id].players:
             return {"success":"false","message":"Name '%s' does not exist in room."%name}
         self.rooms[room_id].players[name].has_called = True
-
+    
+def dump(self):
+    print "\n\n", "-"*80
+    for rid in self.rooms.keys():
+        print rid,"::",str(self.rooms[rid])
+    print "-"*80
+        
 
 httpd = SocketServer.TCPServer(("", PORT), Server)
 
@@ -201,8 +210,9 @@ print "serving at port", PORT
 try:
     httpd.serve_forever()
 except KeyboardInterrupt as e:
-    print "\n\n", "-"*80
-    for rid in httpd.rooms.keys():
-        print rid,"::",str(httpd.rooms[rid])
-    print "-"*80
+#    for rid in httpd.rooms.keys():
+#        print rid,"::",str(httpd.rooms[rid])
+#    print "-"*80
+#    Server().dump()
+    print dump(Server)
     httpd.server_close()
