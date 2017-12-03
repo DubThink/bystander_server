@@ -1,0 +1,44 @@
+{
+	// Player - Server
+	"player update request":{
+		"type":"update_request"
+	},
+	"response ^":{
+		"playerdat":{},
+		"game_state":{}
+	},
+	"player action":{
+		"type":"action",
+		"action":"blinds,call"
+	},
+	"response":{
+		"playerdat":{}
+	},
+	"join ":{
+		"type":"join",
+		"name":"<entered name>"
+	},
+	"response":{
+		"success":true,
+		"uid":3
+	},
+	// Server - Game
+	"start game":{
+		"type":"start",
+		"game_key":"blahapijgapogjap[ogmawgprvoamngpoawjgapogjapogmapgoamgpoaaoe[29rtu2-09tj2-94tj2u-094t2u-0j"
+	},
+	"response":{
+		"success":true,
+		"roomcode":"abcd"
+	},
+	"supdate ":{
+		"type":"supdate_request",
+		"game_key":"blahapijgapogjap[ogmawgprvoamngpoawjgapogjapogmapgoamgpoaaoe[29rtu2-09tj2-94tj2u-094t2u-0j"
+	},
+	"response":{
+		"currentdata":{}
+	}
+
+	//IN any response:
+	// "gameclosed":"true"
+}
