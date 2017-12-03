@@ -10,6 +10,7 @@ import os.path
 import json
 from urlparse import parse_qs
 import random
+import time
 
 PORT=33002
 class Player:
@@ -34,6 +35,7 @@ class Room:
         self.secret = secret
         self.is_live=False
         self.is_open=True
+        self.room_last_updated=time.time()
 
     def addPlayer(self, name):
         self.players[name]=Player(self._uid,name)
@@ -164,7 +166,8 @@ class Server(BaseHTTPRequestHandler):
         if secret != self.rooms[room_id].secret:
             return {"success":False,"players":[],"message":"Bad secret."}
         # if name not in self.rooms[room_id].players:
-        #     return {"success":"false","message":"Name '%s' does not exist in room."%name}
+        #     return {"success":False,"message":"Name '%s' does not exist in room."%name}
+        self.rooms[room_id].room_last_updated=time.time()
         ret=self.rooms[room_id].get_json()
         ret["success"]=True
         ret["message"]="hi"
@@ -175,21 +178,26 @@ class Server(BaseHTTPRequestHandler):
         room_id=data["room_id"][0]
 
         if room_id not in self.rooms:
-            return {"success":"false","message":"Room does not exist."}
+            return {"success":False,"message":"Room does not exist."}
+        if not self.rooms[room_id].is_open:
+            return {"success":False,"message":"Room closed."}
         if name in self.rooms[room_id].players:
-            return {"success":"false","message":"Name is already in use."}
+            return {"success":False,"message":"Name is already in use."}
         uid=self.rooms[room_id].addPlayer(name)
-        return {"name":name, "success":"true", "uid":uid}
+        return {"name":name, "success":True, "uid":uid}
 
     def req_update(self, data):
         name=data["name"][0]
         room_id=data["room_id"][0]
         if room_id not in self.rooms:
-            return {"success":"false","message":"Room does not exist."}
+            return {"success":False,"message":"Room does not exist."}
         if not self.rooms[room_id].is_open:
+            return {"success":False,"message":"Room closed."}
+        if time.time()-self.rooms[room_id].room_last_updated>10:
+            self.rooms[room_id].is_open=False
             return {"success":"false","message":"Room closed."}
         if name not in self.rooms[room_id].players:
-            return {"success":"false","message":"Name '%s' does not exist in room."%name}
+            return {"success":False,"message":"Name '%s' does not exist in room."%name}
         ret=self.rooms[room_id].players[name].get_json()
         ret["success"]=True
         ret["is_live"]=self.rooms[room_id].is_live
@@ -199,22 +207,22 @@ class Server(BaseHTTPRequestHandler):
         name=data["name"][0]
         room_id=data["room_id"][0]
         if room_id not in self.rooms:
-            return {"success":"false","message":"Room does not exist."}
+            return {"success":False,"message":"Room does not exist."}
         if not self.rooms[room_id].is_live:
-            return {"success":"false","message":"Room is not live"}
+            return {"success":False,"message":"Room is not live"}
         if name not in self.rooms[room_id].players:
-            return {"success":"false","message":"Name '%s' does not exist in room."%name}
+            return {"success":False,"message":"Name '%s' does not exist in room."%name}
         self.rooms[room_id].players[name].shade_up = not self.rooms[room_id].players[name].shade_up
 
     def action_call(self,data):
         name=data["name"][0]
         room_id=data["room_id"][0]
         if room_id not in self.rooms:
-            return {"success":"false","message":"Room does not exist."}
+            return {"success":False,"message":"Room does not exist."}
         if not self.rooms[room_id].is_live:
-            return {"success":"false","message":"Room is not live"}
+            return {"success":False,"message":"Room is not live"}
         if name not in self.rooms[room_id].players:
-            return {"success":"false","message":"Name '%s' does not exist in room."%name}
+            return {"success":False,"message":"Name '%s' does not exist in room."%name}
         self.rooms[room_id].players[name].has_called = True
     
     def saction_setlive(self, data, newLive):
