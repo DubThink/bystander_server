@@ -9,6 +9,7 @@ import SocketServer
 import os.path
 import json
 from urlparse import parse_qs
+import random
 
 PORT=33002
 class Player:
@@ -24,22 +25,34 @@ class Player:
         "has_called":self.has_called,
         "name":self.name}
 
-class Game:
+    def __str__(self):
+        return json.dumps(self.get_json())
+class Room:
     _uid=1
-    def __init__(self):
+    def __init__(self,secret):
         self.players = {}
+        self.secret = secret
 
     def addPlayer(self, name):
         self.players[name]=Player(self._uid,name)
         self._uid+=1
         return self._uid-1
 
+    def get_json(self):
+        return{
+            "players":[json.dumps(i) for i in self.players]
+        }
+    def __str__(self):
+        d=self.get_json()
+        d["secret"]=self.secret
+        return json.dumps(d)
+
 class Server(BaseHTTPRequestHandler):
-    games={"asdf":Game()}
+    rooms={"asdf":Room("Did you ever hear the tragedy of Darth Plagueis The Wise?")}
 
     #def __init__(self):
     #    
-    #    self.games["asdf"]=Game()
+    #    self.rooms["asdf"]=Room()
 
     def _set_headers(self):
         self.send_response(200)
@@ -107,6 +120,8 @@ class Server(BaseHTTPRequestHandler):
                 elif atype=="call":
                     self.action_call(data)
                 output_json=self.req_update(data)
+            elif type=="new_room":
+                output_json=self.req_newroom(data)
         except KeyError as e:
             print "===ERROR===",e
             self.do_Error(400,str(e))
@@ -117,45 +132,67 @@ class Server(BaseHTTPRequestHandler):
         print "SENDING:",json.dumps(output_json)
         self.wfile.write(json.dumps(output_json))
 
+    def random_code(self):
+        return chr(random.randint(97,122))+chr(random.randint(97,122))+chr(random.randint(97,122))+chr(random.randint(97,122))
+    
+    def req_newroom(self, data):
+        secret=data["secret"][0]
+        room_id=self.random_code()
+        while room_id in self.rooms:
+            room_id=self.random_code()
+        self.rooms[room_id]=Room(secret)
+        return {"success":"true","room_id":room_id}
+
+    def req_supdate(self, data):
+        secret=data["secret"][0]
+        room_id=data["room_id"][0]
+        if room_id not in self.rooms:
+            return {"success":"false","message":"Room does not exist."}
+        # if name not in self.rooms[room_id].players:
+        #     return {"success":"false","message":"Name '%s' does not exist in room."%name}
+        ret=self.rooms[room_id].players[name].get_json()
+        ret["success"]=True
+        return ret
+
     def req_join(self, data):
         name=data["name"][0]
         room_id=data["room_id"][0]
 
-        if room_id not in self.games:
+        if room_id not in self.rooms:
             return {"success":"false","message":"Room does not exist."}
-        if name in self.games[room_id].players:
+        if name in self.rooms[room_id].players:
             return {"success":"false","message":"Name is already in use."}
-        uid=self.games[room_id].addPlayer(name)
+        uid=self.rooms[room_id].addPlayer(name)
         return {"name":name, "success":"true", "uid":uid}
 
     def req_update(self, data):
         name=data["name"][0]
         room_id=data["room_id"][0]
-        if room_id not in self.games:
+        if room_id not in self.rooms:
             return {"success":"false","message":"Room does not exist."}
-        if name not in self.games[room_id].players:
+        if name not in self.rooms[room_id].players:
             return {"success":"false","message":"Name '%s' does not exist in room."%name}
-        ret=self.games[room_id].players[name].get_json()
+        ret=self.rooms[room_id].players[name].get_json()
         ret["success"]=True
         return ret
 
     def action_blinds(self,data):
         name=data["name"][0]
         room_id=data["room_id"][0]
-        if room_id not in self.games:
+        if room_id not in self.rooms:
             return {"success":"false","message":"Room does not exist."}
-        if name not in self.games[room_id].players:
+        if name not in self.rooms[room_id].players:
             return {"success":"false","message":"Name '%s' does not exist in room."%name}
-        self.games[room_id].players[name].shade_up = not self.games[room_id].players[name].shade_up
+        self.rooms[room_id].players[name].shade_up = not self.rooms[room_id].players[name].shade_up
 
     def action_call(self,data):
         name=data["name"][0]
         room_id=data["room_id"][0]
-        if room_id not in self.games:
+        if room_id not in self.rooms:
             return {"success":"false","message":"Room does not exist."}
-        if name not in self.games[room_id].players:
+        if name not in self.rooms[room_id].players:
             return {"success":"false","message":"Name '%s' does not exist in room."%name}
-        self.games[room_id].players[name].has_called = True
+        self.rooms[room_id].players[name].has_called = True
 
 
 httpd = SocketServer.TCPServer(("", PORT), Server)
@@ -164,4 +201,8 @@ print "serving at port", PORT
 try:
     httpd.serve_forever()
 except KeyboardInterrupt as e:
+    print "\n\n", "-"*80
+    for rid in httpd.rooms.keys():
+        print rid,"::",str(httpd.rooms[rid])
+    print "-"*80
     httpd.server_close()
