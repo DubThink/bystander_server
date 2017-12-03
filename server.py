@@ -88,8 +88,8 @@ class Server(BaseHTTPRequestHandler):
 #        print self.posted
 #        print self.data
         self._set_headers_json()
-        print "SENDING:",str(output_json)
-        self.wfile.write(str(output_json))
+        print "SENDING:",json.dumps(output_json)
+        self.wfile.write(json.dumps(output_json))
 
     def req_join(self, data):
         name=data["name"][0]
