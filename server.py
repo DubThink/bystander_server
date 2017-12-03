@@ -100,6 +100,13 @@ class Server(BaseHTTPRequestHandler):
                 output_json=self.req_join(data)
             elif type=="update_request":
                 output_json=self.req_update(data)
+            elif type=="action":
+                atype=data["action"][0]
+                if atype="blinds":
+                    self.action_blinds(data)
+                elif atype="call":
+                    self.action_call(data)
+                output_json=self.req_update(data)
         except KeyError as e:
             print "===ERROR===",e
             self.do_Error(400,str(e))
@@ -127,10 +134,26 @@ class Server(BaseHTTPRequestHandler):
         if room_id not in self.games:
             return {"success":"false","message":"Room does not exist."}
         if name not in self.games[room_id].players:
-            return {"success":"false","message":"Name '%s' does not exist in room."%name}    
+            return {"success":"false","message":"Name '%s' does not exist in room."%name}
         return self.games[room_id].players[name].get_json()
 
+    def action_blinds(self,data):
+        name=data["name"][0]
+        room_id=data["room_id"][0]
+        if room_id not in self.games:
+            return {"success":"false","message":"Room does not exist."}
+        if name not in self.games[room_id].players:
+            return {"success":"false","message":"Name '%s' does not exist in room."%name}
+        self.games[room_id].players[name].blinds = not self.games[room_id].players[name].blinds
 
+    def action_call(self,data):
+        name=data["name"][0]
+        room_id=data["room_id"][0]
+        if room_id not in self.games:
+            return {"success":"false","message":"Room does not exist."}
+        if name not in self.games[room_id].players:
+            return {"success":"false","message":"Name '%s' does not exist in room."%name}
+        self.games[room_id].players[name].has_called = True
 
 
 httpd = SocketServer.TCPServer(("", PORT), Server)
