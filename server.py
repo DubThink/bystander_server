@@ -8,7 +8,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import SocketServer
 import os.path
 
-PORT=30002
+PORT=33002
 class Player:
     def __init__(self,uid,name):
         self.uid=uid
@@ -53,8 +53,15 @@ class Server(BaseHTTPRequestHandler):
 
     def do_POST(self):
         # Doesn't do anything with posted data
+        length=0
+        try:        
+            length=int(self.headers['content-length'])
+        except ValueError:
+            print fail
+            #do 4--
+        post_data=self.rfile.read(length)
+        print "DATA:",post_data
         self._set_headers_json()
-        print self.headers
 #        print self.posted
 #        print self.data
         self.wfile.write('{"name":"bob"}')
