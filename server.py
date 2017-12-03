@@ -19,12 +19,21 @@ class Player:
         self.name=name
 
 class Game:
+    _uid=1
     def __init__(self):
         self.players = {}
-        
+
+    def addPlayer(self, name):
+        players[name]=Player(_uid,name)
+        _uid+=1
+        return _uid-1
 
 class Server(BaseHTTPRequestHandler):
     games={}
+
+    def __init__(self):
+        self.games["asdf"]=Game()
+
     def _set_headers(self):
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
@@ -54,7 +63,7 @@ class Server(BaseHTTPRequestHandler):
         self.send_response(i)
         self.send_header('Content-type', 'text/html')
         self.send_header('Access-Control-Allow-Origin', 'http://saulamster.com')
-        self.wfile.write("<html><body><h1>Error %d: </h1>%s</body></html>"%i,s)
+        self.wfile.write("<html><body><h1>Error %d: </h1>%s</body></html>"%(i,s))
         
     def do_HEAD(self):
         self._set_headers()
@@ -94,7 +103,13 @@ class Server(BaseHTTPRequestHandler):
     def req_join(self, data):
         name=data["name"][0]
         room_id=data["room_id"][0]
-        return {"name":name+"_in_room_"+room_id, "success":"true", "uid":3}
+
+        if room_id not in self.games:
+            return {"success":"false","message":"Room does not exist."}
+        if name in self.games[room_id].players:
+            return {"success":"false","message":"Name is already in use."}
+        uid=self.games[room_id].addPlayer(name)
+        return {"name":name+"_in_room_"+room_id, "success":"true", "uid":uid}
 
 httpd = SocketServer.TCPServer(("", PORT), Server)
 
