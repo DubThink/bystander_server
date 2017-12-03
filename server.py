@@ -7,6 +7,7 @@ import SimpleHTTPServer
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import SocketServer
 import os.path
+from urlparse import parse_qs
 
 PORT=33002
 class Player:
@@ -61,6 +62,8 @@ class Server(BaseHTTPRequestHandler):
             #do 4--
         post_data=self.rfile.read(length)
         print "DATA:",post_data
+        data=parse_qs(post_data)
+        print "Parsed:",data
         self._set_headers_json()
 #        print self.posted
 #        print self.data
