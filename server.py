@@ -102,9 +102,9 @@ class Server(BaseHTTPRequestHandler):
                 output_json=self.req_update(data)
             elif type=="action":
                 atype=data["action"][0]
-                if atype="blinds":
+                if atype=="shades":
                     self.action_blinds(data)
-                elif atype="call":
+                elif atype=="call":
                     self.action_call(data)
                 output_json=self.req_update(data)
         except KeyError as e:
@@ -135,7 +135,9 @@ class Server(BaseHTTPRequestHandler):
             return {"success":"false","message":"Room does not exist."}
         if name not in self.games[room_id].players:
             return {"success":"false","message":"Name '%s' does not exist in room."%name}
-        return self.games[room_id].players[name].get_json()
+        ret=self.games[room_id].players[name].get_json()
+        ret["success"]=True
+        return ret
 
     def action_blinds(self,data):
         name=data["name"][0]
@@ -144,7 +146,7 @@ class Server(BaseHTTPRequestHandler):
             return {"success":"false","message":"Room does not exist."}
         if name not in self.games[room_id].players:
             return {"success":"false","message":"Name '%s' does not exist in room."%name}
-        self.games[room_id].players[name].blinds = not self.games[room_id].players[name].blinds
+        self.games[room_id].players[name].shade_up = not self.games[room_id].players[name].shade_up
 
     def action_call(self,data):
         name=data["name"][0]
