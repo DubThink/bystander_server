@@ -7,6 +7,7 @@ import SimpleHTTPServer
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import SocketServer
 import os.path
+import json
 from urlparse import parse_qs
 
 PORT=33002
@@ -49,11 +50,11 @@ class Server(BaseHTTPRequestHandler):
         else:
             self.wfile.write("<html><body><h1>404</h1></body></html>")
 
-    def do_Error(self,i):
+    def do_Error(self,i,s="no message"):
         self.send_response(i)
         self.send_header('Content-type', 'text/html')
         self.send_header('Access-Control-Allow-Origin', 'http://saulamster.com')
-        self.wfile.write("<html><body><h1>Error %d</h1></body></html>"%i)
+        self.wfile.write("<html><body><h1>Error %d: </h1>%s</body></html>"%i,s)
         
     def do_HEAD(self):
         self._set_headers()
@@ -74,11 +75,25 @@ class Server(BaseHTTPRequestHandler):
         if "type" not in data:
             self.do_Error(400)
             return
+        type=data["type"][0]
+        output_json={}
+        # {'type': ['join'], 'name': ['Bob']}
+        try:
+            if type="join":
+                output_json=req_join(data)
+            elif type="update_request":
+                pass
+        except KeyError as e:
+            self.do_Error(400,str(e))
 #        print self.posted
 #        print self.data
         self._set_headers_json()
-        self.wfile.write('{"name":"bob"}')
+        self.wfile.write(str(output_json))
 
+    def req_join(self, data):
+        name=data["name"][0]
+        room_id=data["room_id"][0]
+        return {"name":name+"_in_room_"+room_id}
 
 httpd = SocketServer.TCPServer(("", PORT), Server)
 
