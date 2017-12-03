@@ -24,15 +24,16 @@ class Game:
         self.players = {}
 
     def addPlayer(self, name):
-        players[name]=Player(_uid,name)
-        _uid+=1
-        return _uid-1
+        self.players[name]=Player(self._uid,name)
+        self._uid+=1
+        return self._uid-1
 
 class Server(BaseHTTPRequestHandler):
-    games={}
+    games={"asdf":Game()}
 
-    def __init__(self):
-        self.games["asdf"]=Game()
+    #def __init__(self):
+    #    
+    #    self.games["asdf"]=Game()
 
     def _set_headers(self):
         self.send_response(200)
