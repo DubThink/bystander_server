@@ -16,7 +16,13 @@ class Player:
         self.has_called=False
         self.name=name
 
+class Game:
+    def __init__(self):
+        self.players = {}
+        
+
 class Server(BaseHTTPRequestHandler):
+    games={}
     def _set_headers(self):
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
@@ -48,6 +54,7 @@ class Server(BaseHTTPRequestHandler):
     def do_POST(self):
         # Doesn't do anything with posted data
         self._set_headers_json()
+        print self.headers
 #        print self.posted
 #        print self.data
         self.wfile.write('{"name":"bob"}')
