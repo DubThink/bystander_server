@@ -79,21 +79,22 @@ class Server(BaseHTTPRequestHandler):
         output_json={}
         # {'type': ['join'], 'name': ['Bob']}
         try:
-            if type="join":
-                output_json=req_join(data)
-            elif type="update_request":
+            if type=="join":
+                output_json=self.req_join(data)
+            elif type=="update_request":
                 pass
         except KeyError as e:
             self.do_Error(400,str(e))
 #        print self.posted
 #        print self.data
         self._set_headers_json()
+        print "SENDING:",str(output_json)
         self.wfile.write(str(output_json))
 
     def req_join(self, data):
         name=data["name"][0]
         room_id=data["room_id"][0]
-        return {"name":name+"_in_room_"+room_id}
+        return {"name":name+"_in_room_"+room_id, "success":"true", "uid":3}
 
 httpd = SocketServer.TCPServer(("", PORT), Server)
 
