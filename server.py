@@ -8,7 +8,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 import SocketServer
 import os.path
 
-PORT=30002
+PORT=33002
 
 class Server(BaseHTTPRequestHandler):
     def _set_headers(self):
@@ -19,6 +19,7 @@ class Server(BaseHTTPRequestHandler):
     def _set_headers_json(self):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', 'http://saulamster.com')
         self.end_headers()
 
     def do_GET(self):
@@ -40,8 +41,8 @@ class Server(BaseHTTPRequestHandler):
 
     def do_POST(self):
         # Doesn't do anything with posted data
-        self._set_headers()
-        print self.posted
+        self._set_headers_json()
+#        print self.posted
 #        print self.data
         self.wfile.write('{"name":"bob"}')
 
