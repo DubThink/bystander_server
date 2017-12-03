@@ -18,6 +18,12 @@ class Player:
         self.has_called=False
         self.name=name
 
+    def get_json(self):
+        return {"uid":self.uid,
+        "shade_up":self.shade_up,
+        "has_called":self.has_called,
+        "name":self.name}
+
 class Game:
     _uid=1
     def __init__(self):
@@ -92,7 +98,7 @@ class Server(BaseHTTPRequestHandler):
             if type=="join":
                 output_json=self.req_join(data)
             elif type=="update_request":
-                pass
+                output_json=self.req_update(data)
         except KeyError as e:
             self.do_Error(400,str(e))
 #        print self.posted
@@ -110,7 +116,19 @@ class Server(BaseHTTPRequestHandler):
         if name in self.games[room_id].players:
             return {"success":"false","message":"Name is already in use."}
         uid=self.games[room_id].addPlayer(name)
-        return {"name":name+"_in_room_"+room_id, "success":"true", "uid":uid}
+        return {"name":name, "success":"true", "uid":uid}
+
+    def req_update(self, data):
+        name=data["name"][0]
+        room_id=data["room_id"][0]
+        if room_id not in self.games:
+            return {"success":"false","message":"Room does not exist."}
+        if name in self.games[room_id].players:
+            return {"success":"false","message":"Name does not exist in room."}    
+        return self.games[room_id].players[name].get_json()
+
+
+
 
 httpd = SocketServer.TCPServer(("", PORT), Server)
 
