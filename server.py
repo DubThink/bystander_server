@@ -150,6 +150,8 @@ class Server(BaseHTTPRequestHandler):
         room_id=data["room_id"][0]
         if room_id not in self.rooms:
             return {"success":False,"players":[],"message":"Room does not exist."}
+        if secret not self.rooms[room_id].secret:
+            return {"success":False,"players":[],"message":"Bad secret."}
         # if name not in self.rooms[room_id].players:
         #     return {"success":"false","message":"Name '%s' does not exist in room."%name}
         ret=self.rooms[room_id].get_json()
