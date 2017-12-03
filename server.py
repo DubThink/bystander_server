@@ -32,6 +32,7 @@ class Room:
     def __init__(self,secret):
         self.players = {}
         self.secret = secret
+        self.is_live=False
 
     def addPlayer(self, name):
         self.players[name]=Player(self._uid,name)
@@ -124,6 +125,10 @@ class Server(BaseHTTPRequestHandler):
                 output_json=self.req_newroom(data)
             elif type=="supdate_request":
                 output_json=self.req_supdate(data)
+            elif type=="saction":
+                atype=data["action"][0]
+                if atype=="makelive":
+                    output_json=self.saction_setlive(True)
         except KeyError as e:
             print "===ERROR===",e
             self.do_Error(400,str(e))
@@ -150,7 +155,7 @@ class Server(BaseHTTPRequestHandler):
         room_id=data["room_id"][0]
         if room_id not in self.rooms:
             return {"success":False,"players":[],"message":"Room does not exist."}
-        if secret not self.rooms[room_id].secret:
+        if secret != self.rooms[room_id].secret:
             return {"success":False,"players":[],"message":"Bad secret."}
         # if name not in self.rooms[room_id].players:
         #     return {"success":"false","message":"Name '%s' does not exist in room."%name}
@@ -179,6 +184,7 @@ class Server(BaseHTTPRequestHandler):
             return {"success":"false","message":"Name '%s' does not exist in room."%name}
         ret=self.rooms[room_id].players[name].get_json()
         ret["success"]=True
+        ret["is_live"]=self.rooms[room_id].is_live
         return ret
 
     def action_blinds(self,data):
@@ -186,6 +192,8 @@ class Server(BaseHTTPRequestHandler):
         room_id=data["room_id"][0]
         if room_id not in self.rooms:
             return {"success":"false","message":"Room does not exist."}
+        if not self.rooms[room_id].is_live:
+            return {"success":"false","message":"Room is not live"}
         if name not in self.rooms[room_id].players:
             return {"success":"false","message":"Name '%s' does not exist in room."%name}
         self.rooms[room_id].players[name].shade_up = not self.rooms[room_id].players[name].shade_up
@@ -195,6 +203,8 @@ class Server(BaseHTTPRequestHandler):
         room_id=data["room_id"][0]
         if room_id not in self.rooms:
             return {"success":"false","message":"Room does not exist."}
+        if not self.rooms[room_id].is_live:
+            return {"success":"false","message":"Room is not live"}
         if name not in self.rooms[room_id].players:
             return {"success":"false","message":"Name '%s' does not exist in room."%name}
         self.rooms[room_id].players[name].has_called = True
