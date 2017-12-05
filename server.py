@@ -10,9 +10,11 @@ import os.path
 import json
 from urlparse import parse_qs
 import random
-import time
+import time, datetime
 
 PORT=33002
+def timeStamped(fmt='%Y-%m-%d %H:%M:%S'):
+    return datetime.datetime.now().strftime(fmt)
 class Player:
     def __init__(self,uid,name):
         self.uid=uid
@@ -138,13 +140,13 @@ class Server(BaseHTTPRequestHandler):
                     output_json=self.saction_reset(data)
 
         except KeyError as e:
-            print "===ERROR===",e
+            print "===KEY_ERROR===",e
             self.do_Error(400,str(e))
             return
 #        print self.posted
 #        print self.data
         self._set_headers_json()
-        print "SENDING:",json.dumps(output_json)
+        print timeStamped(),"SENDING:",json.dumps(output_json)
         self.wfile.write(json.dumps(output_json))
 
     def random_code(self):
@@ -236,7 +238,7 @@ class Server(BaseHTTPRequestHandler):
         room_id=data["room_id"][0]
         if room_id not in self.rooms:
             return {"success":False,"message":"Room does not exist."}
-        for p in self.rooms[room_id].players:
+        for p in self.rooms[room_id].players.values():
             p.shade_up=False
             p.has_called=False
         return {"success":True,"message":"Reset players"}
